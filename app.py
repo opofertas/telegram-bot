@@ -2,56 +2,60 @@ from flask import Flask, request, jsonify
 import telebot
 import os
 
-# Flask app
-app = Flask(__name__)
-
-# Tokens via variáveis de ambiente
+# Carregar variáveis de ambiente
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHAT_ID = os.getenv("CHAT_ID")
 
-# Bot
+if not BOT_TOKEN:
+    raise Exception("BOT_TOKEN não está configurado no Render")
+
+# Inicializa bot
 bot = telebot.TeleBot(BOT_TOKEN)
 
+# Inicializa Flask
+app = Flask(__name__)
 
 # ===== HOME =====
 @app.route("/", methods=["GET"])
 def home():
-    return jsonify({"message": "Bot is running!"}), 200
+    return jsonify({"message": "Bot está funcionando!"}), 200
 
 
-# ===== WEBHOOK (RENDER chama aqui) =====
+# ===== WEBHOOK =====
 @app.route("/webhook", methods=["POST"])
 def webhook():
     json_data = request.get_json()
+
+    if not json_data:
+        return "No JSON", 400
+
     update = telebot.types.Update.de_json(json_data)
     bot.process_new_updates([update])
     return "OK", 200
 
 
-# ===== EXEMPLO ENVIO MANUAL VIA API =====
+# ===== ROTA PARA ENVIAR MENSAGENS =====
 @app.route("/send", methods=["POST"])
 def send_message():
     data = request.get_json()
 
     if not data or "text" not in data:
-        return jsonify({"error": "Missing 'text' field"}), 400
+        return jsonify({"error": "Campo 'text' é obrigatório"}), 400
 
-    if not BOT_TOKEN or not CHAT_ID:
-        return jsonify({"error": "Environment variables missing"}), 500
+    if not CHAT_ID:
+        return jsonify({"error": "CHAT_ID não configurado"}), 500
 
-    text = data["text"]
-    bot.send_message(CHAT_ID, text)
-
-    return jsonify({"status": "Message sent successfully!"}), 200
+    bot.send_message(CHAT_ID, data["text"])
+    return jsonify({"status": "Mensagem enviada!"}), 200
 
 
 # ===== COMANDO /start =====
-@bot.message_handler(commands=['start'])
+@bot.message_handler(commands=["start"])
 def start(message):
-    bot.reply_to(message, "Bot funcionando no Render 🎉!")
+    bot.reply_to(message, "Bot funcionando no Render 🎉")
 
 
-# ===== INICIAR SERVER =====
+# ===== INICIAR SERVIDOR =====
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
 
