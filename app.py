@@ -5,8 +5,8 @@ import os
 app = Flask(__name__)
 
 # Load secrets from environment variables
-BOT_TOKEN = os.getenv("8560880538:AAGjtWDWz-nXRLqFAfTQsfME31NqNAEVemA")
-CHAT_ID = os.getenv("1003269524862")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+CHAT_ID = os.getenv("CHAT_ID")
 
 @app.route("/", methods=["GET"])
 def home():
