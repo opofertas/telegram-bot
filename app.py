@@ -1,13 +1,13 @@
+import os
 from flask import Flask, request, jsonify
 import telebot
-import os
 
-# Carregar variáveis de ambiente
+# Carrega tokens
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHAT_ID = os.getenv("CHAT_ID")
 
 if not BOT_TOKEN:
-    raise Exception("BOT_TOKEN não está configurado no Render")
+    raise Exception("BOT_TOKEN não configurado no Render")
 
 # Inicializa bot
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -18,7 +18,7 @@ app = Flask(__name__)
 # ===== HOME =====
 @app.route("/", methods=["GET"])
 def home():
-    return jsonify({"message": "Bot está funcionando!"}), 200
+    return jsonify({"message": "Bot está rodando!"}), 200
 
 
 # ===== WEBHOOK =====
@@ -31,10 +31,11 @@ def webhook():
 
     update = telebot.types.Update.de_json(json_data)
     bot.process_new_updates([update])
+
     return "OK", 200
 
 
-# ===== ROTA PARA ENVIAR MENSAGENS =====
+# ===== ROTA MANUAL PARA ENVIO =====
 @app.route("/send", methods=["POST"])
 def send_message():
     data = request.get_json()
