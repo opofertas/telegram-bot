@@ -1,41 +1,30 @@
-from flask import Flask, request, jsonify
-import requests
+from flask import Flask, request
+import telebot
 import os
 
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+CHAT_ID = os.getenv("CHAT_ID")  # opcional
+
+bot = telebot.TeleBot(BOT_TOKEN)
 app = Flask(__name__)
 
-# Load secrets from environment variables
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-CHAT_ID = os.getenv("CHAT_ID")
+@app.route("/webhook", methods=["POST"])
+def webhook():
+    json_data = request.get_json()
+    update = telebot.types.Update.de_json(json_data)
+    bot.process_new_updates([update])
+    return "OK", 200
 
-@app.route("/", methods=["GET"])
+@bot.message_handler(commands=['start'])
+def start(message):
+    bot.reply_to(message, "Bot funcionando no Render 🎉!")
+
+@app.route("/")
 def home():
-    return jsonify({"message": "Telegram Bot API is running!"})
-
-@app.route("/send", methods=["POST"])
-def send_message():
-    data = request.get_json()
-
-    if not data or "text" not in data:
-        return jsonify({"error": "The field 'text' is required"}), 400
-
-    text = data["text"]
-
-    if not BOT_TOKEN or not CHAT_ID:
-        return jsonify({"error": "Environment variables not configured"}), 500
-
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    payload = {"chat_id": CHAT_ID, "text": text}
-
-    response = requests.post(url, data=payload)
-
-    if response.status_code == 200:
-        return jsonify({"status": "Message sent successfully!"})
-    else:
-        return jsonify({
-            "error": "Failed to send message",
-            "details": response.text
-        }), 500
+    return "Bot está no ar!", 200
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    port = int(os.environ.get("PORT", 10000))
+    bot.remove_webhook()
+    bot.set_webhook(url=f"https://telegram-bot-21qr.onrender.com/webhook")
+    app.run(host="0.0.0.0", port=port)
